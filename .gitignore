@@ -1,0 +1,12 @@
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+.tmpdemo/
+.e2e/
+.realc/
+
+.claude/
+.codex/
+.cursor/
