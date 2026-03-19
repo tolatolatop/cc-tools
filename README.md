@@ -5,6 +5,9 @@
 当前已经实现的能力：
 
 - 基于 `compile_commands.json` 的扫描
+- 无 compile DB 的 `fallback` 扫描
+- `kernel-auto-db` 模式下的内核 compile DB 复用
+- 交叉编译参数注入：`--target` / `--sysroot` / `--gcc-toolchain`
 - 环境检查：`doctor`
 - 命令复现：`print-cmd`
 - 统一事实报告：`report.json`
@@ -46,6 +49,13 @@ uv run ctwrap print-cmd path/to/file.c --compile-db build/compile_commands.json
 uv run ctwrap scan path/to/file.c --compile-db build/compile_commands.json
 ```
 
+模式：
+
+- `auto`
+- `db`
+- `fallback`
+- `kernel-auto-db`
+
 ## doctor
 
 检查当前环境是否满足扫描条件。
@@ -53,6 +63,8 @@ uv run ctwrap scan path/to/file.c --compile-db build/compile_commands.json
 ```bash
 uv run ctwrap doctor
 uv run ctwrap doctor --compile-db build/compile_commands.json
+uv run ctwrap doctor --kernel-src /path/to/linux --kernel-build /path/to/out
+uv run ctwrap doctor --sysroot /opt/sysroot --target aarch64-linux-gnu
 ```
 
 输出包含：
@@ -98,6 +110,86 @@ uv run ctwrap scan src/foo.cpp \
   --checks=-*,modernize-use-nullptr
 ```
 
+## fallback 单文件扫描
+
+没有 `compile_commands.json` 时可以显式进入 `fallback`：
+
+```bash
+uv run ctwrap scan src/foo.c \
+  --mode fallback \
+  --std=gnu11
+```
+
+带 include 和宏定义的 `fallback`：
+
+```bash
+uv run ctwrap scan src/foo.c \
+  --mode fallback \
+  --std=gnu11 \
+  -I include \
+  -D __KERNEL__
+```
+
+说明：
+
+- `fallback` 输出会带 `confidence` 和 `confidence_reasons`
+- 低置信度 `fallback` 结果默认是 advisory，并返回 `exit code 3`
+
+## 交叉编译参数
+
+当前支持以下交叉编译参数：
+
+- `--target`
+- `--sysroot`
+- `--gcc-toolchain`
+
+示例：
+
+```bash
+uv run ctwrap print-cmd src/foo.c \
+  --compile-db build/compile_commands.json \
+  --target aarch64-linux-gnu
+```
+
+或在 `fallback` 模式下：
+
+```bash
+uv run ctwrap scan src/foo.c \
+  --mode fallback \
+  --std=gnu11 \
+  --target aarch64-linux-gnu
+```
+
+## Linux 内核模式
+
+如果内核构建目录里已有 `compile_commands.json`，可以这样复用：
+
+```bash
+uv run ctwrap scan drivers/foo/bar.c \
+  --mode kernel-auto-db \
+  --kernel-src /path/to/linux \
+  --kernel-build /path/to/out
+```
+
+查看最终命令：
+
+```bash
+uv run ctwrap print-cmd drivers/foo/bar.c \
+  --mode kernel-auto-db \
+  --kernel-src /path/to/linux \
+  --kernel-build /path/to/out
+```
+
+如果允许内核模式失败后回退到 `fallback`：
+
+```bash
+uv run ctwrap scan drivers/foo/bar.c \
+  --mode kernel-auto-db \
+  --kernel-src /path/to/linux \
+  --kernel-build /path/to/out \
+  --allow-fallback
+```
+
 同时写出报告文件：
 
 ```bash
@@ -114,6 +206,7 @@ uv run ctwrap scan src/foo.cpp \
 - `0`：没有 finding
 - `1`：扫描成功，但发现了 warning/error
 - `2`：扫描执行失败或文件级失败
+- `3`：仅得到低置信度 `fallback` 结果
 
 ## 输出文件
 

@@ -24,6 +24,7 @@ def build_agent_report(report: Report) -> AgentReport:
                 line=finding.line,
                 message=finding.message,
                 confidence=finding.confidence,
+                confidence_reasons=finding.confidence_reasons,
                 context_kind=finding.context_kind,
                 result_trust=finding.result_trust,
             )

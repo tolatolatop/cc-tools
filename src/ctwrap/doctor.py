@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ctwrap.compilation import load_compile_database
 from ctwrap.config.schema import Settings
+from ctwrap.kernel import is_kernel_tree
 from ctwrap.tools import detect_clang_tidy_version, parse_major_version, require_tool
 
 
@@ -37,4 +38,17 @@ def run_doctor(settings: Settings) -> list[tuple[str, str]]:
             results.append(("WARN", f"compile database not found: {path}"))
     else:
         results.append(("WARN", "compile database path not configured"))
+
+    if settings.toolchain.sysroot:
+        if Path(settings.toolchain.sysroot).exists():
+            results.append(("INFO", f"sysroot: {settings.toolchain.sysroot}"))
+        else:
+            results.append(("WARN", f"sysroot not found: {settings.toolchain.sysroot}"))
+
+    kernel_root = settings.kernel.source_dir
+    if kernel_root:
+        if is_kernel_tree(kernel_root):
+            results.append(("INFO", f"kernel tree detected: {kernel_root}"))
+        else:
+            results.append(("WARN", f"kernel tree markers not found: {kernel_root}"))
     return results

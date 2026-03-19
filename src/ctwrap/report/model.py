@@ -15,10 +15,12 @@ class Finding(BaseModel):
     line: int
     column: int
     confidence: Literal["high", "medium", "low"] = "high"
-    context_kind: Literal["compile_db"] = "compile_db"
+    confidence_reasons: list[str] = Field(default_factory=list)
+    context_kind: Literal["compile_db", "fallback", "kernel-auto-db"] = "compile_db"
     result_trust: Literal["strict", "advisory"] = "strict"
     repro_command: list[str] = Field(default_factory=list)
     filtered_flags: list[str] = Field(default_factory=list)
+    build_origin: str | None = None
 
 
 class RunMeta(BaseModel):
@@ -28,6 +30,8 @@ class RunMeta(BaseModel):
     clang_tidy_path: str
     clang_tidy_version: str | None = None
     parser_mode: str = "text"
+    project_kind: str = "generic-c-cpp"
+    fallback_reason: str | None = None
 
 
 class Summary(BaseModel):
@@ -56,6 +60,7 @@ class AgentFinding(BaseModel):
     line: int
     message: str
     confidence: str
+    confidence_reasons: list[str] = Field(default_factory=list)
     context_kind: str
     result_trust: str
 
