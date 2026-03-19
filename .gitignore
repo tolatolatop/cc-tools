@@ -6,6 +6,8 @@ __pycache__/
 .tmpdemo/
 .e2e/
 .realc/
+.fallbackdemo/
+.kerneldemo/
 
 .claude/
 .codex/
